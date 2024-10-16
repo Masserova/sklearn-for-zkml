@@ -582,7 +582,7 @@ cdef class ClassificationCriterion(Criterion):
         cdef intp_t k
         cdef intp_t c
         cdef float64_t w = 1.0
-        
+
         cdef float64_t s_attribute
         cdef intp_t s_class_index
 
@@ -831,6 +831,30 @@ cdef class Gini(ClassificationCriterion):
 
         return gini / self.n_outputs
 
+    cdef float64_t node_unfairness(self) noexcept nogil:
+        """Evaluate the unfairness of the current node.
+
+        Evaluate the Gini criterion as unfairness of the current node,
+        i.e. the impurity of sample_indices[start:end]. The smaller the unfairness the
+        better.
+        """
+        cdef float64_t gini = 0.0
+        cdef float64_t sq_count
+        cdef float64_t count_k
+        cdef intp_t k
+        cdef intp_t s
+
+        sq_count = 0.0
+
+        for s in range(self.n_s_attribute_options):
+            count_k = self.sum_total_sensitive[s]
+            sq_count += count_k * count_k
+
+        gini = 1.0 - sq_count / (self.weighted_n_node_samples *
+                                    self.weighted_n_node_samples)
+
+        return gini
+
     cdef void children_impurity(self, float64_t* impurity_left,
                                 float64_t* impurity_right) noexcept nogil:
         """Evaluate the impurity in children nodes.
@@ -873,6 +897,47 @@ cdef class Gini(ClassificationCriterion):
         impurity_left[0] = gini_left / self.n_outputs
         impurity_right[0] = gini_right / self.n_outputs
 
+
+    cdef void children_unfairness(self, float64_t* unfairness_left,
+                                float64_t* unfairness_right) noexcept nogil:
+        """Evaluate the impurity in children nodes.
+
+        i.e. the unfairness of the left child (sample_indices[start:pos]) and the
+        unfairness the right child (sample_indices[pos:end]) using the Gini index.
+
+        Parameters
+        ----------
+        unfairness_left : float64_t pointer
+            The memory address to save the unfairness of the left node to
+        unfairness_right : float64_t pointer
+            The memory address to save the unfairness of the right node to
+        """
+        cdef float64_t gini_left = 0.0
+        cdef float64_t gini_right = 0.0
+        cdef float64_t sq_count_left
+        cdef float64_t sq_count_right
+        cdef float64_t count_k
+        cdef intp_t k
+        cdef intp_t c
+
+        sq_count_left = 0.0
+        sq_count_right = 0.0
+
+        for s in range(self.n_s_attribute_options):
+            count_k = self.sum_left_sensitive[s]
+            sq_count_left += count_k * count_k
+
+            count_k = self.sum_right_sensitive[s]
+            sq_count_right += count_k * count_k
+
+        gini_left = 1.0 - sq_count_left / (self.weighted_n_left *
+                                            self.weighted_n_left)
+
+        gini_right = 1.0 - sq_count_right / (self.weighted_n_right *
+                                                self.weighted_n_right)
+
+        unfairness_left[0] = gini_left
+        unfairness_right[0] = gini_right
 
 cdef inline void _move_sums_regression(
     RegressionCriterion criterion,

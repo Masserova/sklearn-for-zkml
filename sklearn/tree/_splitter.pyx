@@ -343,6 +343,7 @@ cdef inline int node_split_best(
     cdef intp_t f_j
     cdef intp_t p
     cdef intp_t p_prev
+    cdef float64_t unfairness_improvement
 
     cdef intp_t n_visited_features = 0
     # Number of features discovered to be constant during the split search
@@ -467,10 +468,13 @@ cdef inline int node_split_best(
                 criterion.children_unfairness(
                     &current_split.unfairness_left, &current_split.unfairness_right
                 )
-                if ((splitter.with_fairness == 1) and (criterion.unfairness_improvement(criterion.node_unfairness(),
+
+                unfairness_improvement = criterion.unfairness_improvement(criterion.node_unfairness(),
                     current_split.unfairness_left,
-                    current_split.unfairness_right) > splitter.f_threshold)):
-                        printf("Skipping split bc of fairness check")
+                    current_split.unfairness_right)
+                
+                printf("%f ", unfairness_improvement)
+                if ((splitter.with_fairness == 1) and (unfairness_improvement > splitter.f_threshold)):
                         continue
 
                 # Reject if monotonicity constraints are not satisfied

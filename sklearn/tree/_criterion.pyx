@@ -881,7 +881,7 @@ cdef class Gini(ClassificationCriterion):
         i.e. the impurity of sample_indices[start:end]. The smaller the unfairness the
         better.
         """
-        cdef float64_t gini = 0.0
+        cdef float64_t gini = 1.0
         cdef float64_t sq_count
         cdef float64_t count_k
         cdef intp_t k
@@ -893,8 +893,10 @@ cdef class Gini(ClassificationCriterion):
             count_k = self.sum_total_sensitive[s]
             sq_count += count_k * count_k
 
-        gini = (1.0 - sq_count / (self.weighted_n_node_samples *
-                                    self.weighted_n_node_samples))/(1 - 1 / self.n_s_attribute_options)
+            gini = gini - sq_count / (self.weighted_n_node_samples *
+                                    self.weighted_n_node_samples)
+
+        gini = gini / (1 - 1 / self.n_s_attribute_options)
 
         return gini
 
@@ -955,8 +957,8 @@ cdef class Gini(ClassificationCriterion):
         unfairness_right : float64_t pointer
             The memory address to save the unfairness of the right node to
         """
-        cdef float64_t gini_left = 0.0
-        cdef float64_t gini_right = 0.0
+        cdef float64_t gini_left = 1.0
+        cdef float64_t gini_right = 1.0
         cdef float64_t sq_count_left
         cdef float64_t sq_count_right
         cdef float64_t count_k
@@ -973,14 +975,14 @@ cdef class Gini(ClassificationCriterion):
             count_k = self.sum_right_sensitive[s]
             sq_count_right += count_k * count_k
 
-        gini_left = (1.0 - sq_count_left / (self.weighted_n_left *
-                                            self.weighted_n_left)) / (1 - 1 / self.n_s_attribute_options)
+            gini_left = gini_left - sq_count_left / (self.weighted_n_left *
+                                            self.weighted_n_left) 
 
-        gini_right = (1.0 - sq_count_right / (self.weighted_n_right *
-                                                self.weighted_n_right)) / (1 - 1 / self.n_s_attribute_options)
+            gini_right = gini_right - sq_count_right / (self.weighted_n_right *
+                                                self.weighted_n_right)
 
-        unfairness_left[0] = gini_left
-        unfairness_right[0] = gini_right
+        unfairness_left[0] = gini_left / (1 - 1 / self.n_s_attribute_options)
+        unfairness_right[0] = gini_right / (1 - 1 / self.n_s_attribute_options)
 
 cdef inline void _move_sums_regression(
     RegressionCriterion criterion,

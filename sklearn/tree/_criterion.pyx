@@ -4,6 +4,7 @@
 from libc.string cimport memcpy
 from libc.string cimport memset
 from libc.math cimport fabs, INFINITY
+from libc.stdio cimport printf
 
 import numpy as np
 cimport numpy as cnp
@@ -710,6 +711,7 @@ cdef class Gini(ClassificationCriterion):
         cdef float64_t count_k
         cdef intp_t k
         cdef intp_t c
+        printf("Hello World\n")
 
         for k in range(self.n_outputs):
             sq_count = 0.0

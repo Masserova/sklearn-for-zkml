@@ -53,6 +53,7 @@ cdef inline void _init_split(SplitRecord* self, intp_t start_pos) noexcept nogil
     self.feature = 0
     self.threshold = 0.
     self.improvement = -INFINITY
+    self.unfairness_improvement = INFINITY
     self.missing_go_to_left = False
     self.n_missing = 0
 
@@ -288,6 +289,10 @@ cdef class Splitter:
 
         return self.criterion.node_impurity()
 
+    cdef float64_t node_unfairness(self) noexcept nogil:
+        """Return the unfairness of the current node."""
+
+        return self.criterion.node_unfairness()
 
 cdef inline int node_split_best(
     Splitter splitter,
@@ -330,6 +335,7 @@ cdef inline int node_split_best(
     cdef float64_t best_proxy_improvement = -INFINITY
 
     cdef float64_t impurity = parent_record.impurity
+    cdef float64_t unfairness = parent_record.unfairness
     cdef float64_t lower_bound = parent_record.lower_bound
     cdef float64_t upper_bound = parent_record.upper_bound
 
@@ -454,6 +460,19 @@ cdef inline int node_split_best(
                 current_split.pos = p
                 criterion.update(current_split.pos)
 
+
+                printf("Prepared to check fairness")
+
+                # Reject if fairness condition is not satisfied
+                criterion.children_unfairness(
+                    &current_split.unfairness_left, &current_split.unfairness_right
+                )
+                if ((splitter.with_fairness == 1) and (criterion.unfairness_improvement(criterion.node_unfairness(),
+                    current_split.unfairness_left,
+                    current_split.unfairness_right) > splitter.f_threshold)):
+                        printf("Skipping split bc of fairness check")
+                        continue
+
                 # Reject if monotonicity constraints are not satisfied
                 if (
                     with_monotonic_cst and
@@ -502,6 +521,7 @@ cdef inline int node_split_best(
         # Evaluate when there are missing values and all missing values goes
         # to the right node and non-missing values goes to the left node.
         if has_missing:
+            printf("Missing values in splitter")
             n_left, n_right = end - start - n_missing, n_missing
             p = end - n_missing
             missing_go_to_left = 0
@@ -574,6 +594,7 @@ cdef inline int node_split_random(
     Returns -1 in case of failure to allocate memory (and raise MemoryError)
     or 0 otherwise.
     """
+    printf("node split random")
     cdef const int8_t[:] monotonic_cst = splitter.monotonic_cst
     cdef bint with_monotonic_cst = splitter.with_monotonic_cst
 

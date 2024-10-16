@@ -20,6 +20,9 @@ cdef struct SplitRecord:
     float64_t improvement     # Impurity improvement given parent node.
     float64_t impurity_left   # Impurity of the left split.
     float64_t impurity_right  # Impurity of the right split.
+    float64_t unfairness_improvement     # Impurity improvement given parent node.
+    float64_t unfairness_left   # Impurity of the left split.
+    float64_t unfairness_right  # Impurity of the right split.
     float64_t lower_bound     # Lower bound on value of both children for monotonicity
     float64_t upper_bound     # Upper bound on value of both children for monotonicity
     uint8_t missing_go_to_left  # Controls if missing values go to the left node.
@@ -112,3 +115,5 @@ cdef class Splitter:
     cdef void clip_node_value(self, float64_t* dest, float64_t lower_bound, float64_t upper_bound) noexcept nogil
 
     cdef float64_t node_impurity(self) noexcept nogil
+
+    cdef float64_t node_unfairness(self) noexcept nogil

@@ -31,6 +31,7 @@ cdef struct ParentInfo:
     float64_t lower_bound           # the lower bound of the parent's impurity
     float64_t upper_bound           # the upper bound of the parent's impurity
     float64_t impurity              # the impurity of the parent
+    float64_t unfairness            # the unfairness of the parent
     intp_t n_constant_features      # the number of constant features found in parent
 
 cdef class Tree:

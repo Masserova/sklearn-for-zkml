@@ -137,6 +137,13 @@ cdef class Criterion:
         """
         pass
 
+    cdef float64_t node_unfairness(self) noexcept nogil:
+        pass
+
+    cdef void children_unfairness(self, float64_t* unfairness_left,
+                                float64_t* unfairness_right) noexcept nogil:
+        pass
+
     cdef void node_value(self, float64_t* dest) noexcept nogil:
         """Placeholder for storing the node value.
 

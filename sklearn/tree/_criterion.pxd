@@ -56,10 +56,16 @@ cdef class Criterion:
     cdef int reverse_reset(self) except -1 nogil
     cdef int update(self, intp_t new_pos) except -1 nogil
     cdef float64_t node_impurity(self) noexcept nogil
+    cdef float64_t node_unfairness(self) noexcept nogil
     cdef void children_impurity(
         self,
         float64_t* impurity_left,
         float64_t* impurity_right
+    ) noexcept nogil
+    cdef void children_unfairness(
+        self,
+        float64_t* unfairness_left,
+        float64_t* unfairness_right
     ) noexcept nogil
     cdef void node_value(
         self,
@@ -121,13 +127,6 @@ cdef class ClassificationCriterion(Criterion):
     cdef float64_t[::1] sum_right_sensitive     # Same as above, but for the right side of the split
     cdef float64_t[::1] sum_missing_sensitive   # Same as above, but for missing values in X
 
-
-    cdef float64_t node_unfairness(self) noexcept nogil
-    cdef void children_unfairness(
-        self,
-        float64_t* unfairness_left,
-        float64_t* unfairness_right
-    ) noexcept nogil
 
 cdef class RegressionCriterion(Criterion):
     """Abstract regression criterion."""

@@ -23,6 +23,7 @@ of splitting strategies:
 from libc.string cimport memcpy
 
 from ..utils._typedefs cimport int8_t
+from libc.stdio cimport printf
 from ._criterion cimport Criterion
 from ._partitioner cimport (
     FEATURE_THRESHOLD, DensePartitioner, SparsePartitioner,
@@ -70,6 +71,9 @@ cdef class Splitter:
         float64_t min_weight_leaf,
         object random_state,
         const int8_t[:] monotonic_cst,
+        bint with_fairness,
+        float64_t f_threshold,
+        intp_t s_attribute,
     ):
         """
         Parameters
@@ -109,6 +113,9 @@ cdef class Splitter:
         self.random_state = random_state
         self.monotonic_cst = monotonic_cst
         self.with_monotonic_cst = monotonic_cst is not None
+        self.with_fairness = with_fairness
+        self.f_threshold = f_threshold
+        self.s_attribute = s_attribute
 
     def __getstate__(self):
         return {}
@@ -157,6 +164,19 @@ cdef class Splitter:
             At least one missing values is in X.
         """
 
+        printf("Splitter: %d\n", self.with_fairness)
+        printf("Splitter: %f\n", self.f_threshold)
+        printf("Splitter: %d\n", self.s_attribute)
+
+        self.s_column = X[:,self.s_attribute].astype(np.float64)
+        self.s_attribute_options = np.unique(self.s_column)
+        self.n_s_attribute_options = self.s_attribute_options.size
+
+        #cdef intp_t k
+        #for k in range(self.s_column.size):
+        #    printf("%f ", self.s_column[k])
+        #printf("Splitter: %d\n", self.n_s_attribute_options)
+
         self.rand_r_state = self.random_state.randint(0, RAND_R_MAX)
         cdef intp_t n_samples = X.shape[0]
 
@@ -168,6 +188,7 @@ cdef class Splitter:
         cdef intp_t i, j
         cdef float64_t weighted_n_samples = 0.0
         j = 0
+
 
         for i in range(n_samples):
             # Only work with positively weighted samples
@@ -228,7 +249,8 @@ cdef class Splitter:
             self.weighted_n_samples,
             self.samples,
             start,
-            end
+            end,
+            self.s_column
         )
 
         weighted_n_node_samples[0] = self.criterion.weighted_n_node_samples

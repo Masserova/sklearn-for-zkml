@@ -30,6 +30,9 @@ cdef class Criterion:
     cdef float64_t weighted_n_right           # Weighted number of samples in the right node
     cdef float64_t weighted_n_missing         # Weighted number of samples that are missing
 
+
+    cdef float64_t[::1] s_column         # Values of sensitive attributes
+
     # The criterion object is maintained such that left and right collected
     # statistics correspond to samples[start:pos] and samples[pos:end].
 
@@ -41,7 +44,8 @@ cdef class Criterion:
         float64_t weighted_n_samples,
         const intp_t[:] sample_indices,
         intp_t start,
-        intp_t end
+        intp_t end,
+        float64_t[::1] s_column
     ) except -1 nogil
     cdef void init_sum_missing(self)
     cdef void init_missing(self, intp_t n_missing) noexcept nogil

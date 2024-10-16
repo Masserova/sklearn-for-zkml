@@ -61,6 +61,14 @@ cdef class Splitter:
     cdef bint with_monotonic_cst
     cdef const float64_t[:] sample_weight
 
+    cdef bint with_fairness
+    cdef float64_t f_threshold
+    cdef intp_t s_attribute
+
+    cdef intp_t n_s_attribute_options
+    cdef float64_t[::1] s_attribute_options
+    cdef float64_t[::1] s_column
+
     # The samples vector `samples` is maintained by the Splitter object such
     # that the samples contained in a node are contiguous. With this setting,
     # `node_split` reorganizes the node samples `samples[start:end]` in two

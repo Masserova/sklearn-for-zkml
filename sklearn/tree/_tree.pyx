@@ -13,6 +13,7 @@ from libcpp.algorithm cimport pop_heap
 from libcpp.algorithm cimport push_heap
 from libcpp.stack cimport stack
 from libcpp cimport bool
+from libc.stdio cimport printf
 
 import struct
 
@@ -142,13 +143,17 @@ cdef class DepthFirstTreeBuilder(TreeBuilder):
 
     def __cinit__(self, Splitter splitter, intp_t min_samples_split,
                   intp_t min_samples_leaf, float64_t min_weight_leaf,
-                  intp_t max_depth, float64_t min_impurity_decrease):
+                  intp_t max_depth, float64_t min_impurity_decrease):  
+                  #bint with_fairness,  float64_t f_threshold, intp_t s_attribute):
         self.splitter = splitter
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_weight_leaf = min_weight_leaf
         self.max_depth = max_depth
         self.min_impurity_decrease = min_impurity_decrease
+        #self.with_fairness = with_fairness
+        #self.f_threshold = f_threshold
+        #self.s_attribute = s_attribute
 
     cpdef build(
         self,
@@ -158,7 +163,10 @@ cdef class DepthFirstTreeBuilder(TreeBuilder):
         const float64_t[:] sample_weight=None,
         const uint8_t[::1] missing_values_in_feature_mask=None,
     ):
-        """Build a decision tree from the training set (X, y)."""
+        #"""Build a decision tree from the training set (X, y)."""
+        #printf("DTBuilder: %d\n", self.with_fairness)
+        #printf("DTBuilder: %f\n", self.f_threshold)
+        #printf("DTBuilder: %d\n", self.s_attribute)
 
         # check input
         X, y, sample_weight = self._check_input(X, y, sample_weight)

@@ -30,7 +30,7 @@ X_adult.to_csv("adult.csv", index=False, header=True)
 #a = array.array('i',(i for i in range(1,105)))
 
 
-decision_tree = DecisionTreeClassifier(random_state=19, max_depth=6)
+decision_tree = DecisionTreeClassifier(random_state=19, max_depth=6, with_fairness=True, f_threshold=0.5, s_attribute=3)
 decision_tree.fit(X_adult, y_adult)
 
 r = export_text(decision_tree, max_depth=6, decimals=0, spacing=1)

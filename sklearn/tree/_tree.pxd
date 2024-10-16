@@ -98,6 +98,9 @@ cdef class TreeBuilder:
     cdef float64_t min_weight_leaf         # Minimum weight in a leaf
     cdef intp_t max_depth               # Maximal tree depth
     cdef float64_t min_impurity_decrease   # Impurity threshold for early stopping
+    #cdef bint with_fairness
+    #cdef float64_t f_threshold
+    #cdef intp_t s_attribute
 
     cpdef build(
         self,

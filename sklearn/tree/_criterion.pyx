@@ -8,6 +8,7 @@ from libc.stdio cimport printf
 
 import numpy as np
 cimport numpy as cnp
+from libc.stdio cimport printf
 cnp.import_array()
 
 from scipy.special.cython_special cimport xlogy
@@ -38,6 +39,7 @@ cdef class Criterion:
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
+        float64_t[::1] s_column
     ) except -1 nogil:
         """Placeholder for a method which will initialize the criterion.
 
@@ -344,7 +346,8 @@ cdef class ClassificationCriterion(Criterion):
         float64_t weighted_n_samples,
         const intp_t[:] sample_indices,
         intp_t start,
-        intp_t end
+        intp_t end,
+        float64_t[::1] s_column
     ) except -1 nogil:
         """Initialize the criterion.
 
@@ -378,6 +381,12 @@ cdef class ClassificationCriterion(Criterion):
         self.n_node_samples = end - start
         self.weighted_n_samples = weighted_n_samples
         self.weighted_n_node_samples = 0.0
+        self.s_column = s_column
+
+        #printf("Criterion \n")
+        #cdef intp_t z
+        #for z in range(self.n_node_samples):
+        #    printf("%f ", self.s_column[start + z])
 
         cdef intp_t i
         cdef intp_t p
@@ -859,6 +868,7 @@ cdef class RegressionCriterion(Criterion):
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
+        float64_t[::1] s_column
     ) except -1 nogil:
         """Initialize the criterion.
 
@@ -1237,6 +1247,7 @@ cdef class MAE(RegressionCriterion):
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
+        float64_t[::1] s_column
     ) except -1 nogil:
         """Initialize the criterion.
 

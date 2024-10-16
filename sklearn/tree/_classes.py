@@ -135,6 +135,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
         class_weight=None,
         ccp_alpha=0.0,
         monotonic_cst=None,
+        with_fairness=False,
+        s_attribute=-1,
+        f_threshold=0.8
     ):
         self.criterion = criterion
         self.splitter = splitter
@@ -149,6 +152,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
         self.class_weight = class_weight
         self.ccp_alpha = ccp_alpha
         self.monotonic_cst = monotonic_cst
+        self.with_fairness = with_fairness
+        self.s_attribute = s_attribute
+        self.f_threshold = f_threshold
 
     def get_depth(self):
         """Return the depth of the decision tree.
@@ -230,6 +236,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
         check_input=True,
         missing_values_in_feature_mask=None,
     ):
+        print(self.with_fairness)
+        print(self.f_threshold)
+        print(self.s_attribute)
         random_state = check_random_state(self.random_state)
 
         if check_input:
@@ -430,6 +439,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
                 min_weight_leaf,
                 random_state,
                 monotonic_cst,
+                self.with_fairness,
+                self.f_threshold,
+                self.s_attribute
             )
 
         if is_classifier(self):
@@ -451,6 +463,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
                 min_weight_leaf,
                 max_depth,
                 self.min_impurity_decrease,
+                #self.with_fairness,
+                #self.f_threshold,
+                #self.s_attribute
             )
         else:
             builder = BestFirstTreeBuilder(
@@ -957,6 +972,9 @@ class DecisionTreeClassifier(ClassifierMixin, BaseDecisionTree):
         class_weight=None,
         ccp_alpha=0.0,
         monotonic_cst=None,
+        with_fairness=False,
+        s_attribute=-1,
+        f_threshold=0.8
     ):
         super().__init__(
             criterion=criterion,
@@ -972,6 +990,9 @@ class DecisionTreeClassifier(ClassifierMixin, BaseDecisionTree):
             min_impurity_decrease=min_impurity_decrease,
             monotonic_cst=monotonic_cst,
             ccp_alpha=ccp_alpha,
+            with_fairness=with_fairness,
+            s_attribute=s_attribute,
+            f_threshold=f_threshold
         )
 
     @_fit_context(prefer_skip_nested_validation=True)

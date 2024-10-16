@@ -241,6 +241,8 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
         print(self.s_attribute)
         random_state = check_random_state(self.random_state)
 
+        n_s_attributes = 0
+
         if check_input:
             # Need to validate separately here.
             # We can't pass multi_output=True because that would allow y to be
@@ -316,6 +318,9 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
                 )
 
             self.n_classes_ = np.array(self.n_classes_, dtype=np.intp)
+            if (self.s_attribute > -1):
+                print("Sensitive attribute is " + str(self.s_attribute))
+                n_s_attributes = np.unique(X[:,self.s_attribute]).size
 
         if getattr(y, "dtype", None) != DOUBLE or not y.flags.contiguous:
             y = np.ascontiguousarray(y, dtype=DOUBLE)
@@ -380,7 +385,7 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
         if not isinstance(criterion, Criterion):
             if is_classification:
                 criterion = CRITERIA_CLF[self.criterion](
-                    self.n_outputs_, self.n_classes_
+                    self.n_outputs_, self.n_classes_, n_s_attributes
                 )
             else:
                 criterion = CRITERIA_REG[self.criterion](self.n_outputs_, n_samples)

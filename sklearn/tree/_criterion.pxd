@@ -102,6 +102,20 @@ cdef class ClassificationCriterion(Criterion):
     cdef float64_t[:, ::1] sum_right    # Same as above, but for the right side of the split
     cdef float64_t[:, ::1] sum_missing  # Same as above, but for missing values in X
 
+
+    cdef float64_t[::1] sum_total_sensitive    # The sum of the weighted count of each sensitive attribute option.
+    cdef float64_t[::1] sum_left_sensitive      # Same as above, but for the left side of the split
+    cdef float64_t[::1] sum_right_sensitive     # Same as above, but for the right side of the split
+    cdef float64_t[::1] sum_missing_sensitive   # Same as above, but for missing values in X
+
+
+    cdef float64_t node_unfairness(self) noexcept nogil
+    cdef void children_unfairness(
+        self,
+        float64_t* unfairness_left,
+        float64_t* unfairness_right
+    ) noexcept nogil
+
 cdef class RegressionCriterion(Criterion):
     """Abstract regression criterion."""
 

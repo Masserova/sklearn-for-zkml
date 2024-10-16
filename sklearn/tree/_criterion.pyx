@@ -292,7 +292,7 @@ cdef class ClassificationCriterion(Criterion):
     """Abstract criterion for classification."""
 
     def __cinit__(self, intp_t n_outputs,
-                  cnp.ndarray[intp_t, ndim=1] n_classes):
+                  cnp.ndarray[intp_t, ndim=1] n_classes, intp_t n_s_attributes):
         """Initialize attributes for this criterion.
 
         Parameters
@@ -334,6 +334,13 @@ cdef class ClassificationCriterion(Criterion):
         self.sum_total = np.zeros((n_outputs, max_n_classes), dtype=np.float64)
         self.sum_left = np.zeros((n_outputs, max_n_classes), dtype=np.float64)
         self.sum_right = np.zeros((n_outputs, max_n_classes), dtype=np.float64)
+
+
+        self.sum_total_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
+        self.sum_left_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
+        self.sum_right_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
+
+        print("Initialized all the sums, including sensitive for this many attribute options: %d\n", n_s_attributes)
 
     def __reduce__(self):
         return (type(self),
@@ -557,6 +564,13 @@ cdef class ClassificationCriterion(Criterion):
 
     cdef void children_impurity(self, float64_t* impurity_left,
                                 float64_t* impurity_right) noexcept nogil:
+        pass
+
+    cdef float64_t node_unfairness(self) noexcept nogil:
+        pass
+
+    cdef void children_unfairness(self, float64_t* unfairness_left,
+                                float64_t* unfairness_right) noexcept nogil:
         pass
 
     cdef void node_value(self, float64_t* dest) noexcept nogil:

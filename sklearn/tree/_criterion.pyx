@@ -251,6 +251,8 @@ cdef inline void _move_sums_classification(
     ClassificationCriterion criterion,
     float64_t[:, ::1] sum_1,
     float64_t[:, ::1] sum_2,
+    float64_t[::1] sum_1_sensitive,
+    float64_t[::1] sum_2_sensitive,
     float64_t* weighted_n_1,
     float64_t* weighted_n_2,
     bint put_missing_in_1,
@@ -276,6 +278,12 @@ cdef inline void _move_sums_classification(
             for c in range(criterion.n_classes[k]):
                 sum_2[k, c] = criterion.sum_total[k, c] - criterion.sum_missing[k, c]
 
+        n_bytes = criterion.n_s_attribute_options * sizeof(float64_t)
+        memcpy(&sum_2_sensitive[0], &criterion.sum_missing_sensitive[0], n_bytes)
+
+        for k in range(criterion.n_s_attribute_options):
+            sum_2_sensitive[k] = criterion.sum_total_sensitive[k] - criterion.sum_missing_sensitive[k]
+
         weighted_n_1[0] = criterion.weighted_n_missing
         weighted_n_2[0] = criterion.weighted_n_node_samples - criterion.weighted_n_missing
     else:
@@ -284,6 +292,10 @@ cdef inline void _move_sums_classification(
             n_bytes = criterion.n_classes[k] * sizeof(float64_t)
             memset(&sum_1[k, 0], 0, n_bytes)
             memcpy(&sum_2[k, 0], &criterion.sum_total[k, 0], n_bytes)
+
+        n_bytes = criterion.n_s_attribute_options * sizeof(float64_t)
+        memset(&sum_1_sensitive[0], 0, n_bytes)
+        memcpy(&sum_2_sensitive[0], &criterion.sum_total_sensitive[0], n_bytes)
 
         weighted_n_1[0] = 0.0
         weighted_n_2[0] = criterion.weighted_n_node_samples
@@ -517,6 +529,8 @@ cdef class ClassificationCriterion(Criterion):
             self,
             self.sum_left,
             self.sum_right,
+            self.sum_left_sensitive,
+            self.sum_right_sensitive,
             &self.weighted_n_left,
             &self.weighted_n_right,
             self.missing_go_to_left,
@@ -534,6 +548,8 @@ cdef class ClassificationCriterion(Criterion):
             self,
             self.sum_right,
             self.sum_left,
+            self.sum_right_sensitive,
+            self.sum_left_sensitive,
             &self.weighted_n_right,
             &self.weighted_n_left,
             not self.missing_go_to_left

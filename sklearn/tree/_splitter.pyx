@@ -250,7 +250,8 @@ cdef class Splitter:
             self.samples,
             start,
             end,
-            self.s_column
+            self.s_column,
+            self.s_attribute_options
         )
 
         weighted_n_node_samples[0] = self.criterion.weighted_n_node_samples

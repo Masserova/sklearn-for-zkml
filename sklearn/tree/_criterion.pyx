@@ -39,7 +39,8 @@ cdef class Criterion:
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
-        float64_t[::1] s_column
+        float64_t[::1] s_column,
+        float64_t[::1] s_attribute_options
     ) except -1 nogil:
         """Placeholder for a method which will initialize the criterion.
 
@@ -292,7 +293,7 @@ cdef class ClassificationCriterion(Criterion):
     """Abstract criterion for classification."""
 
     def __cinit__(self, intp_t n_outputs,
-                  cnp.ndarray[intp_t, ndim=1] n_classes, intp_t n_s_attributes):
+                  cnp.ndarray[intp_t, ndim=1] n_classes, intp_t n_s_attribute_options):
         """Initialize attributes for this criterion.
 
         Parameters
@@ -316,6 +317,7 @@ cdef class ClassificationCriterion(Criterion):
         self.weighted_n_missing = 0.0
 
         self.n_classes = np.empty(n_outputs, dtype=np.intp)
+        self.n_s_attribute_options = n_s_attribute_options
 
         cdef intp_t k = 0
         cdef intp_t max_n_classes = 0
@@ -336,11 +338,14 @@ cdef class ClassificationCriterion(Criterion):
         self.sum_right = np.zeros((n_outputs, max_n_classes), dtype=np.float64)
 
 
-        self.sum_total_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
-        self.sum_left_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
-        self.sum_right_sensitive = np.zeros(n_s_attributes, dtype=np.float64)
+        self.sum_total_sensitive = np.zeros(n_s_attribute_options, dtype=np.float64)
+        self.sum_left_sensitive = np.zeros(n_s_attribute_options, dtype=np.float64)
+        self.sum_right_sensitive = np.zeros(n_s_attribute_options, dtype=np.float64)
 
-        print("Initialized all the sums, including sensitive for this many attribute options: %d\n", n_s_attributes)
+        print("Initialized all the sums, including sensitive for this many attribute options: %d\n", n_s_attribute_options)
+        
+        # Sensitive attribute values
+        self.s_attribute_options = np.zeros(n_s_attribute_options, dtype=np.float64)
 
     def __reduce__(self):
         return (type(self),
@@ -354,7 +359,8 @@ cdef class ClassificationCriterion(Criterion):
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
-        float64_t[::1] s_column
+        float64_t[::1] s_column,
+        float64_t[::1] s_attribute_options
     ) except -1 nogil:
         """Initialize the criterion.
 
@@ -389,6 +395,7 @@ cdef class ClassificationCriterion(Criterion):
         self.weighted_n_samples = weighted_n_samples
         self.weighted_n_node_samples = 0.0
         self.s_column = s_column
+        self.s_attribute_options = s_attribute_options
 
         #printf("Criterion \n")
         #cdef intp_t z
@@ -400,6 +407,24 @@ cdef class ClassificationCriterion(Criterion):
         cdef intp_t k
         cdef intp_t c
         cdef float64_t w = 1.0
+        cdef intp_t cur = 0
+        cdef bint found = False
+
+        cdef float64_t s_attribute
+        cdef intp_t s_class_index
+
+
+        #printf("Gathering sensitive attribute options")
+        #for k in range(self.s_column.size):
+        #    found = False
+        #    for i in range(cur):
+        #        if (abs(s_column[k]- self.s_attribute_options[i]) < 0.0001):
+        #            found = True
+        #    if (not found):
+        #        self.s_attribute_options[cur] = s_column[k]
+        #        printf("%f ", s_column[k])
+        #        cur += 1
+
 
         for k in range(self.n_outputs):
             memset(&self.sum_total[k, 0], 0, self.n_classes[k] * sizeof(float64_t))
@@ -417,7 +442,20 @@ cdef class ClassificationCriterion(Criterion):
                 c = <intp_t> self.y[i, k]
                 self.sum_total[k, c] += w
 
+            # Get value of the sensitive attribute of this node
+            s_attribute = s_column[i]
+            # Determine the index of the corresponding sensitive class               
+            #printf("Checking for equality float")
+            for k in range(self.n_s_attribute_options):
+                if (abs(s_attribute - self.s_attribute_options[k]) < 0.0001):
+                    s_class_index = k
+            
+            self.sum_total_sensitive[s_class_index] += w
             self.weighted_n_node_samples += w
+
+        #printf("Sums for each class \n")
+        #for i in range(self.n_s_attribute_options):
+        #    printf("%f ", self.sum_total_sensitive[i])
 
         # Reset to pos=start
         self.reset()
@@ -426,6 +464,7 @@ cdef class ClassificationCriterion(Criterion):
     cdef void init_sum_missing(self):
         """Init sum_missing to hold sums for missing values."""
         self.sum_missing = np.zeros((self.n_outputs, self.max_n_classes), dtype=np.float64)
+        self.sum_missing_sensitive = np.zeros(self.n_s_attribute_options, dtype=np.float64)
 
     cdef void init_missing(self, intp_t n_missing) noexcept nogil:
         """Initialize sum_missing if there are missing values.
@@ -435,6 +474,8 @@ cdef class ClassificationCriterion(Criterion):
         """
         cdef intp_t i, p, k, c
         cdef float64_t w = 1.0
+        cdef float64_t s_attribute
+        cdef intp_t s_class_index
 
         self.n_missing = n_missing
         if n_missing == 0:
@@ -453,6 +494,15 @@ cdef class ClassificationCriterion(Criterion):
             for k in range(self.n_outputs):
                 c = <intp_t> self.y[i, k]
                 self.sum_missing[k, c] += w
+
+            # Get value of the sensitive attribute of this node
+            s_attribute = self.s_column[i]
+            # Determine the index of the corresponding sensitive class               
+            #printf("Checking for equality float")
+            for k in range(self.n_s_attribute_options):
+                if (abs(s_attribute - self.s_attribute_options[k]) < 0.0001):
+                    s_class_index = k
+            self.sum_missing_sensitive[s_class_index] += w
 
             self.weighted_n_missing += w
 
@@ -882,7 +932,8 @@ cdef class RegressionCriterion(Criterion):
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
-        float64_t[::1] s_column
+        float64_t[::1] s_column,
+        float64_t[::1] s_attribute_options
     ) except -1 nogil:
         """Initialize the criterion.
 
@@ -1261,7 +1312,8 @@ cdef class MAE(RegressionCriterion):
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
-        float64_t[::1] s_column
+        float64_t[::1] s_column,
+        float64_t[::1] s_attribute_options
     ) except -1 nogil:
         """Initialize the criterion.
 

@@ -31,7 +31,9 @@ cdef class Criterion:
     cdef float64_t weighted_n_missing         # Weighted number of samples that are missing
 
 
-    cdef float64_t[::1] s_column         # Values of sensitive attributes
+    cdef float64_t[::1] s_column         # Values of sensitive attribute for each datapoint
+    cdef float64_t[::1] s_attribute_options         # All posibilities for sensitive attribute value
+
 
     # The criterion object is maintained such that left and right collected
     # statistics correspond to samples[start:pos] and samples[pos:end].
@@ -45,7 +47,8 @@ cdef class Criterion:
         const intp_t[:] sample_indices,
         intp_t start,
         intp_t end,
-        float64_t[::1] s_column
+        float64_t[::1] s_column,
+        float64_t[::1] s_attribute_options,
     ) except -1 nogil
     cdef void init_sum_missing(self)
     cdef void init_missing(self, intp_t n_missing) noexcept nogil
@@ -103,6 +106,8 @@ cdef class ClassificationCriterion(Criterion):
     cdef float64_t[:, ::1] sum_missing  # Same as above, but for missing values in X
 
 
+    cdef intp_t n_s_attribute_options
+    #cdef float64_t[::1] s_attribute_options
     cdef float64_t[::1] sum_total_sensitive    # The sum of the weighted count of each sensitive attribute option.
     cdef float64_t[::1] sum_left_sensitive      # Same as above, but for the left side of the split
     cdef float64_t[::1] sum_right_sensitive     # Same as above, but for the right side of the split

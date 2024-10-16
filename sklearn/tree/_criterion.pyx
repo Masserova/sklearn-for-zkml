@@ -279,7 +279,7 @@ cdef inline void _move_sums_classification(
                 sum_2[k, c] = criterion.sum_total[k, c] - criterion.sum_missing[k, c]
 
         n_bytes = criterion.n_s_attribute_options * sizeof(float64_t)
-        memcpy(&sum_2_sensitive[0], &criterion.sum_missing_sensitive[0], n_bytes)
+        memcpy(&sum_1_sensitive[0], &criterion.sum_missing_sensitive[0], n_bytes)
 
         for k in range(criterion.n_s_attribute_options):
             sum_2_sensitive[k] = criterion.sum_total_sensitive[k] - criterion.sum_missing_sensitive[k]
@@ -582,6 +582,9 @@ cdef class ClassificationCriterion(Criterion):
         cdef intp_t k
         cdef intp_t c
         cdef float64_t w = 1.0
+        
+        cdef float64_t s_attribute
+        cdef intp_t s_class_index
 
         # Update statistics up to new_pos
         #
@@ -600,6 +603,12 @@ cdef class ClassificationCriterion(Criterion):
                 for k in range(self.n_outputs):
                     self.sum_left[k, <intp_t> self.y[i, k]] += w
 
+                s_attribute = self.s_column[i]
+                for k in range(self.n_s_attribute_options):
+                    if (abs(s_attribute - self.s_attribute_options[k]) < 0.0001):
+                        s_class_index = k
+                self.sum_left_sensitive[s_class_index] += w
+
                 self.weighted_n_left += w
 
         else:
@@ -614,6 +623,12 @@ cdef class ClassificationCriterion(Criterion):
                 for k in range(self.n_outputs):
                     self.sum_left[k, <intp_t> self.y[i, k]] -= w
 
+                s_attribute = self.s_column[i]
+                for k in range(self.n_s_attribute_options):
+                    if (abs(s_attribute - self.s_attribute_options[k]) < 0.0001):
+                        s_class_index = k
+                self.sum_left_sensitive[s_class_index] -= w
+
                 self.weighted_n_left -= w
 
         # Update right part statistics
@@ -622,6 +637,8 @@ cdef class ClassificationCriterion(Criterion):
             for c in range(self.n_classes[k]):
                 self.sum_right[k, c] = self.sum_total[k, c] - self.sum_left[k, c]
 
+        for k in range(self.n_s_attribute_options):
+            self.sum_right_sensitive[k] = self.sum_total_sensitive[k] - self.sum_left_sensitive[k]
         self.pos = new_pos
         return 0
 

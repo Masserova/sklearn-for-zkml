@@ -214,6 +214,42 @@ cdef class Criterion:
                                  - (self.weighted_n_left /
                                     self.weighted_n_node_samples * impurity_left)))
 
+    cdef float64_t unfairness_improvement(self, float64_t unfairness_parent,
+                                        float64_t unfairness_left,
+                                        float64_t unfairness_right) noexcept nogil:
+        """Compute the improvement in impurity.
+
+        This method computes the improvement in impurity when a split occurs.
+        The weighted impurity improvement equation is the following:
+
+            N_t / N * (impurity - N_t_R / N_t * right_impurity
+                                - N_t_L / N_t * left_impurity)
+
+        where N is the total number of samples, N_t is the number of samples
+        at the current node, N_t_L is the number of samples in the left child,
+        and N_t_R is the number of samples in the right child,
+
+        Parameters
+        ----------
+        impurity_parent : float64_t
+            The initial impurity of the parent node before the split
+
+        impurity_left : float64_t
+            The impurity of the left child
+
+        impurity_right : float64_t
+            The impurity of the right child
+
+        Return
+        ------
+        float64_t : improvement in impurity after the split occurs
+        """
+        return (
+                (unfairness_parent - (self.weighted_n_right /
+                                    self.weighted_n_node_samples * unfairness_right)
+                                 - (self.weighted_n_left /
+                                    self.weighted_n_node_samples * unfairness_left)))
+
     cdef bint check_monotonicity(
         self,
         cnp.int8_t monotonic_cst,
@@ -850,8 +886,8 @@ cdef class Gini(ClassificationCriterion):
             count_k = self.sum_total_sensitive[s]
             sq_count += count_k * count_k
 
-        gini = 1.0 - sq_count / (self.weighted_n_node_samples *
-                                    self.weighted_n_node_samples)
+        gini = (1.0 - sq_count / (self.weighted_n_node_samples *
+                                    self.weighted_n_node_samples))/(1 - 1 / self.n_s_attribute_options)
 
         return gini
 
@@ -930,11 +966,11 @@ cdef class Gini(ClassificationCriterion):
             count_k = self.sum_right_sensitive[s]
             sq_count_right += count_k * count_k
 
-        gini_left = 1.0 - sq_count_left / (self.weighted_n_left *
-                                            self.weighted_n_left)
+        gini_left = (1.0 - sq_count_left / (self.weighted_n_left *
+                                            self.weighted_n_left)) / (1 - 1 / self.n_s_attribute_options)
 
-        gini_right = 1.0 - sq_count_right / (self.weighted_n_right *
-                                                self.weighted_n_right)
+        gini_right = (1.0 - sq_count_right / (self.weighted_n_right *
+                                                self.weighted_n_right)) / (1 - 1 / self.n_s_attribute_options)
 
         unfairness_left[0] = gini_left
         unfairness_right[0] = gini_right

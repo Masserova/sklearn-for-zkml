@@ -78,6 +78,14 @@ cdef class Criterion:
         float64_t impurity_left,
         float64_t impurity_right
     ) noexcept nogil
+
+    cdef float64_t unfairness_improvement(
+        self,
+        float64_t unfairness_parent,
+        float64_t unfairness_left,
+        float64_t unfairness_right
+    ) noexcept nogil
+
     cdef float64_t proxy_impurity_improvement(self) noexcept nogil
     cdef bint check_monotonicity(
             self,

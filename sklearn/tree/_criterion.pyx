@@ -891,7 +891,7 @@ cdef class Gini(ClassificationCriterion):
 
         for s in range(self.n_s_attribute_options):
             count_k = self.sum_total_sensitive[s]
-            sq_count += count_k * count_k
+            sq_count = count_k * count_k
 
             gini = gini - sq_count / (self.weighted_n_node_samples *
                                     self.weighted_n_node_samples)
@@ -970,10 +970,10 @@ cdef class Gini(ClassificationCriterion):
 
         for s in range(self.n_s_attribute_options):
             count_k = self.sum_left_sensitive[s]
-            sq_count_left += count_k * count_k
+            sq_count_left = count_k * count_k
 
             count_k = self.sum_right_sensitive[s]
-            sq_count_right += count_k * count_k
+            sq_count_right = count_k * count_k
 
             gini_left = gini_left - sq_count_left / (self.weighted_n_left *
                                             self.weighted_n_left) 
